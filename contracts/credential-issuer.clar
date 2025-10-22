@@ -136,6 +136,39 @@
   (default-to u0 (get count (map-get? holder-credential-count { holder: holder })))
 )
 
+(define-read-only (get-holder-credential-by-index (holder principal) (index uint))
+  (map-get? holder-credentials { holder: holder, index: index })
+)
+
+(define-read-only (get-issuer-info (issuer principal))
+  (map-get? issuers { issuer: issuer })
+)
+
 (define-read-only (get-stats)
   (ok { total-credentials: (var-get credential-counter) })
+)
+
+;; Remove issuer authorization
+(define-public (remove-issuer (issuer principal))
+  (begin
+    (asserts! (is-eq tx-sender CONTRACT-OWNER) ERR-NOT-AUTHORIZED)
+    (map-set issuers
+      { issuer: issuer }
+      (merge (unwrap! (map-get? issuers { issuer: issuer }) ERR-NOT-FOUND) { authorized: false })
+    )
+    (ok true)
+  )
+)
+
+;; Get all credentials for a holder
+(define-read-only (get-all-holder-credentials (holder principal))
+  (let
+    (
+      (count (get-holder-count holder))
+    )
+    (ok {
+      holder: holder,
+      total-credentials: count
+    })
+  )
 )
